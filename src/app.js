@@ -17,6 +17,8 @@ const usersRouter = require("../routes/users");
 
 //3. call controllers, jika ada controller lain misal regionController, simpan disini
 const departmentController = require("./controllers/departmentController");
+const regionController = require("./controllers/regionController");
+const countryController = require("./controllers/countryController");
 
 const app = express();
 
@@ -52,6 +54,18 @@ app.get(
 app.post(`${appConfig.api.prefix}/departments`, departmentController.create);
 app.put(`${appConfig.api.prefix}/departments/:id`, departmentController.update);
 app.delete(`${appConfig.api.prefix}/departments/:id`, departmentController.remove);
+
+app.get(`${appConfig.api.prefix}/regions`, regionController.findAll);
+app.get(`${appConfig.api.prefix}/regions/:id`, regionController.findById);
+app.post(`${appConfig.api.prefix}/regions`, regionController.create);
+app.put(`${appConfig.api.prefix}/regions/:id`, regionController.update);
+app.delete(`${appConfig.api.prefix}/regions/:id`, regionController.remove);
+
+app.get(`${appConfig.api.prefix}/countries`, countryController.findAll);
+app.get(`${appConfig.api.prefix}/countries/:id`, countryController.findById);
+app.post(`${appConfig.api.prefix}/countries`, countryController.create);
+app.put(`${appConfig.api.prefix}/countries/:id`, countryController.update);
+app.delete(`${appConfig.api.prefix}/countries/:id`, countryController.remove);
 
 
 app.use(globalErrorHandler);

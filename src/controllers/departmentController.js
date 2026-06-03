@@ -6,7 +6,7 @@ class DepartmentController {
       const data = await departmentService.getAllDepartments();
 
       return res.success("Fetch all data departments", data);
-    } catch (error) {}
+    } catch (error) { }
   }
 
   async findById(req, res, next) {
@@ -19,6 +19,53 @@ class DepartmentController {
       next(error);
     }
   }
+
+  async create(req, res, next) {
+    try {
+      const { departmentName } = req.body;
+      const data = await departmentService.createDepartment(departmentName);
+
+      return res.success('Department created successfully', data);
+      /* return res.status(201).json({
+      success: true,
+      message: 'Department created.',
+      data: newDepartment
+      }); */
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  update = async (req, res, next) => {
+    try {
+      const { id } = req.params;
+      const data = await departmentService.updateDepartment(id, req.body);
+      return res.success('Department updated successfully', data);
+      /* return res.json({
+      success: true,
+      statusCode: 200,
+      message: 'Department updated',
+      data: updatedData
+      }); */
+    } catch (error) {
+      next(error); // Lempar ke Global Error Handler Expres
+    }
+  };
+  remove = async (req, res, next) => {
+    try {
+      const { id } = req.params;
+      await departmentService.deleteDepartment(id);
+      return res.success('Department deleted successfully', null);
+      /* return res.json({
+      success: true,
+      statusCode: 200,
+      message: 'Department removed'
+      }); */
+    } catch (error) {
+      next(error);
+    }
+  };
+
 }
 
 module.exports = new DepartmentController();

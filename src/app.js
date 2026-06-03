@@ -49,6 +49,10 @@ app.get(
   `${appConfig.api.prefix}/departments/:id`,
   departmentController.findById,
 );
+app.post(`${appConfig.api.prefix}/departments`, departmentController.create);
+app.put(`${appConfig.api.prefix}/departments/:id`, departmentController.update);
+app.delete(`${appConfig.api.prefix}/departments/:id`, departmentController.remove);
+
 
 app.use(globalErrorHandler);
 

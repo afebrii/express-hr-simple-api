@@ -49,6 +49,32 @@ class RegionController {
       next(error);
     }
   };
+
+  // kita gunakan arrow function untuk hindari reference 'this'
+  getRegionsWithCountries = async (req, res, next) => {
+    try {
+      const data = await regionService.getAllRegionsWithCountries();
+
+      //di sini response di inject dan override message nya    
+      return res.success('Regions with countries retrieved successfully.', data, 200);
+    } catch (error) {
+      // jika error akan di forward ke globalErrorHandler
+      next(error);
+    }
+  };
+
+  createCountries = async (req, res, next) => {
+    try {
+
+      const { regionId, countries } = req.body;
+
+      const data = await regionService.addCountriesToRegion(regionId, countries);
+
+      return res.success('Countries successfully added to the region.', data, 201);
+    } catch (error) {
+      next(error);
+    }
+  };
 }
 
 module.exports = new RegionController();

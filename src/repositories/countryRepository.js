@@ -103,6 +103,24 @@ class CountryRepository {
       if (conn) await conn.close();
     }
   }
+
+  async insertBulk(conn, regionId, countries) {
+    const query = `
+            INSERT INTO countries (country_id, country_name, region_id) 
+            VALUES (:countryId, :countryName, :regionId)
+        `;
+
+    // Looping untuk mengeksekusi query insert satu per satu
+    for (const country of countries) {
+      await conn.execute(query, {
+        countryId: country.countryId,
+        countryName: country.countryName,
+        regionId: regionId
+      });
+      // Jangan gunakan autocommit disini,karena kita insert bulk data
+      // Lakukan autocommit  di layer Service.
+    }
+  }
 }
 
 module.exports = new CountryRepository();

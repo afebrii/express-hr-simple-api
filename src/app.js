@@ -47,15 +47,14 @@ app.get("/health", (req, res) => {
 
 //4.call route endpoint
 app.get(`${appConfig.api.prefix}/departments`, departmentController.findAll);
-app.get(
-  `${appConfig.api.prefix}/departments/:id`,
-  departmentController.findById,
-);
+app.get(`${appConfig.api.prefix}/departments/:id`, departmentController.findById);
 app.post(`${appConfig.api.prefix}/departments`, departmentController.create);
 app.put(`${appConfig.api.prefix}/departments/:id`, departmentController.update);
 app.delete(`${appConfig.api.prefix}/departments/:id`, departmentController.remove);
 
 app.get(`${appConfig.api.prefix}/regions`, regionController.findAll);
+app.get(`${appConfig.api.prefix}/regions/countries`, regionController.getRegionsWithCountries);
+app.post(`${appConfig.api.prefix}/regions/countries`, regionController.createCountries);
 app.get(`${appConfig.api.prefix}/regions/:id`, regionController.findById);
 app.post(`${appConfig.api.prefix}/regions`, regionController.create);
 app.put(`${appConfig.api.prefix}/regions/:id`, regionController.update);

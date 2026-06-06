@@ -87,6 +87,62 @@ class RegionRepository {
       if (conn) await conn.close();
     }
   }
+
+  async findAllWithCountries() {
+    let conn;
+    try {
+      conn = await getConnection();
+
+      const query = `
+                SELECT 
+                    r.region_id, 
+                    r.region_name, 
+                    c.country_id, 
+                    c.country_name 
+                FROM regions r
+                LEFT JOIN countries c ON r.region_id = c.region_id
+                ORDER BY r.region_id
+            `;
+
+      const result = await conn.execute(query);
+      const rows = result.rows; // Array berisi objek hasil query
+
+      // PROSES MAPPING KE NESTED OBJECT (One-to-Many)
+      // .reduce() digunakan untuk grouping otomatis berdassarkan region_id
+      const nestedData = rows.reduce((acc, row) => {
+        // Cari tahu apakah region ini sudah masuk ke dalam akumulator (acc)
+        let region = acc.find(item => item.regionId === row.REGION_ID);
+
+        // Jika region belum ada di akumulator, buat objek region baru
+        if (!region) {
+          region = {
+            regionId: row.REGION_ID,
+            regionName: row.REGION_NAME,
+            countries: [] // conntaine/wadah tuk nampung relasi many
+          };
+          acc.push(region);
+        }
+
+        // Jika kolom country_id tidak null, masukkan ke dalam array countries milik region ini
+        if (row.COUNTRY_ID) {
+          region.countries.push({
+            countryId: row.COUNTRY_ID,
+            countryName: row.COUNTRY_NAME
+          });
+        }
+
+        return acc;
+      }, []);
+
+      return nestedData;
+
+    } catch (error) {
+      console.error('Error in RegionRepository.findAllWithCountries:', error.message);
+      throw error;
+    } finally {
+      if (conn) await conn.close();
+    }
+  }
 }
 
 module.exports = new RegionRepository();

@@ -47,6 +47,8 @@ app.get("/health", (req, res) => {
 
 //4.call route endpoint
 app.get(`${appConfig.api.prefix}/departments`, departmentController.findAll);
+app.get(`${appConfig.api.prefix}/departments/employees`, departmentController.getDepartmentsWithEmployees);
+app.post(`${appConfig.api.prefix}/departments/employees`, departmentController.createEmployees);
 app.get(`${appConfig.api.prefix}/departments/:id`, departmentController.findById);
 app.post(`${appConfig.api.prefix}/departments`, departmentController.create);
 app.put(`${appConfig.api.prefix}/departments/:id`, departmentController.update);

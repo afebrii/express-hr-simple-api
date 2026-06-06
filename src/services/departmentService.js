@@ -1,5 +1,7 @@
 const departmentRepository = require("../repositories/departmentRepository");
+const employeeRepository = require("../repositories/employeeRepository");
 const { BadRequestError, NotFoundError } = require("../utils/customError");
+const { getConnection } = require("../utils/db");
 
 class DepartmentService {
   async getAllDepartments() {
@@ -70,6 +72,71 @@ class DepartmentService {
       throw new NotFoundError(`Department dengan ID ${id} tidak ditemukan`);
     }
     return true;
+  }
+
+  async getAllDepartmentsWithEmployees() {
+    const departments = await departmentRepository.findAllWithEmployees();
+
+    if (!departments || departments.length === 0) {
+      throw new NotFoundError('No departments or employees found in the database.');
+    }
+
+    return departments;
+  }
+
+  async addEmployeesToDepartment(departmentId, employees) {
+    // 1. Validasi Input Awal
+    if (!departmentId) {
+      throw new BadRequestError('Department ID is required.');
+    }
+    if (!employees || !Array.isArray(employees) || employees.length === 0) {
+      throw new BadRequestError('Employees must be a non-empty array.');
+    }
+
+    // Validasi data setiap employee
+    for (const emp of employees) {
+      if (!emp.lastName || !emp.email || !emp.hireDate || !emp.jobId) {
+        throw new BadRequestError('Each employee must have lastName, email, hireDate, and jobId.');
+      }
+    }
+
+    // Pastikan department ada
+    const department = await departmentRepository.findById(Number(departmentId));
+    if (!department) {
+      throw new NotFoundError(`Department dengan ID ${departmentId} tidak ditemukan.`);
+    }
+
+    let conn;
+    try {
+      // 2. Create connection 
+      conn = await getConnection();
+
+      // 3. Call repository untuk melakukan proses looping insert
+      await employeeRepository.insertBulk(conn, departmentId, employees);
+
+      // 4. COMMIT data ke Oracle DB
+      await conn.commit();
+
+      // return data respons API
+      return { departmentId, totalInserted: employees.length, employees };
+
+    } catch (error) {
+      // 5. Jika ada error, rollback semuanya!
+      if (conn) {
+        console.error('Transaction failed. Rolling back changes...');
+        await conn.rollback();
+      }
+
+      // Jika ada error constraint dari oracle, bungkus dengan BadRequestError 
+      if (error.message.includes('ORA-00001')) {
+        throw new BadRequestError('One of the Employee Emails already exists (Duplicate Email).');
+      }
+
+      throw error; // lempar ke global handler
+    } finally {
+      // 6. Pastikan koneksi selalu di close
+      if (conn) await conn.close();
+    }
   }
 }
 

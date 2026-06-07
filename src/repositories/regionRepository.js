@@ -33,7 +33,8 @@ class RegionRepository {
     try {
       conn = await getConnection();
       const result = await conn.execute(
-        `INSERT INTO regions (region_name) VALUES (:regionName) RETURNING region_id INTO :id`,
+        // `INSERT INTO regions (region_name) VALUES (:regionName) RETURNING region_id INTO :id`,
+        `INSERT INTO regions (region_id, region_name) VALUES ((SELECT COALESCE(MAX(region_id), 0) + 1 FROM regions), :regionName) RETURNING region_id INTO :id`,
         {
           regionName: regionName,
           id: { type: oracledb.NUMBER, dir: oracledb.BIND_OUT }

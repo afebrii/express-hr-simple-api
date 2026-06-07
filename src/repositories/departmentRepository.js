@@ -34,7 +34,8 @@ class DepartmentRepository {
       conn = await getConnection();
       // Pastikan panggil autocommit untuk menyimpan data
       const result = await conn.execute(
-        `INSERT INTO departments (department_name) VALUES (:departmentName) RETURNING department_id INTO :id`,
+        // `INSERT INTO departments (department_name) VALUES (:departmentName) RETURNING department_id INTO :id`,
+        `INSERT INTO departments (department_id, department_name) VALUES (departments_seq.NEXTVAL, :departmentName) RETURNING department_id INTO :id`,
         {
           departmentName: departmentName,
           id: { type: oracledb.NUMBER, dir: oracledb.BIND_OUT }

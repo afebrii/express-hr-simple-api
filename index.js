@@ -1,6 +1,6 @@
 const app = require("./src/app");
-const appConfig = require("./config/appConfig");
-const { getConnection, closeConnectionPool } = require("./src/utils/db");
+const appConfig = require("./src/infra/config/appConfig");
+const { getConnection, closeConnectionPool } = require("./src/infra/db");
 
 let server;
 
@@ -79,28 +79,3 @@ process.on('SIGTERM', () => {
 
 // Running server
 startServer();
-
-// // ----------- Database Connection & Start Server ----------------
-// const startServer = async () => {
-//     try {
-//         // Test koneksi ke Oracle DB sebelum running server Express
-//         console.log("Connecting to Oracle Database...");
-
-//         const testConn = await getConnection();
-//         await testConn.close(); // Langsung tutup jika koneksi sukses
-//         console.log("Connection to OracleDB Succeed");
-
-//         // open port jika database udah aman terkoneksi
-//         app.listen(appConfig.port, () => {
-//             console.log(
-//                 `Server running on http://localhost:${appConfig.port} [Mode: ${appConfig.env}]`,
-//             );
-//         });
-//     } catch (error) {
-//         console.error("Error when trying connect to db:", error.message);
-//         process.exit(1); // Shutdown aplikasi jika db gagal konek
-//     }
-// };
-
-// // init server
-// startServer();

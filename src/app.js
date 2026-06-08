@@ -5,16 +5,16 @@ const logger = require("morgan");
 const cors = require("cors");
 
 //1. call config
-const appConfig = require("../config/appConfig");
-const dbConfig = require("../config/dbConfig");
-const { getConnection } = require("./utils/db");
+const appConfig = require("./infra/config/appConfig");
+const dbConfig = require("./infra/config/dbConfig");
+const { getConnection } = require("./infra/db");
 
 //call middleware
-const { globalErrorHandler } = require("./middlewares/errorHandler");
-const { globalResponseHandler } = require("./utils/response");
+const { globalErrorHandler } = require("./infra/errorHandler");
+const { globalResponseHandler } = require("./infra/response");
 
 // call router
-const indexRouter = require("./routes/index");
+const indexRouter = require("./features/index");
 
 const app = express();
 
@@ -44,7 +44,6 @@ app.use(globalResponseHandler);
 
 //4.call global route
 app.use(`${appConfig.api.prefix}`, indexRouter);
-
 
 app.use(globalErrorHandler);
 

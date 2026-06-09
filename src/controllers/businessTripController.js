@@ -43,9 +43,9 @@ class BusinessTripController {
   approve = async (req, res, next) => {
     try {
       const { id } = req.params;
-      const { approvedBy } = req.body;
-      const data = await businessTripService.approveTrip(id, approvedBy);
-      return res.success("Business Trip approved successfully", data);
+      const { approvedBy, status, notes } = req.body;
+      const data = await businessTripService.approveTrip(id, { approvedBy, status, notes });
+      return res.success("Business Trip approval status updated successfully", data);
     } catch (error) {
       next(error);
     }

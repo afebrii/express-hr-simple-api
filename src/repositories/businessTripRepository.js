@@ -18,6 +18,7 @@ class BusinessTripRepository {
           bt.total_allowance AS "totalAllowance",
           bt.status AS "status",
           bt.approved_by AS "approvedBy",
+          bt.notes AS "notes",
           app.first_name || ' ' || app.last_name AS "approverName",
           (
             SELECT LISTAGG(e.first_name || ' ' || e.last_name, ', ') WITHIN GROUP (ORDER BY e.first_name)
@@ -76,6 +77,7 @@ class BusinessTripRepository {
           bt.daily_allowance AS "dailyAllowance",
           bt.meal_allowance AS "mealAllowance",
           bt.total_allowance AS "totalAllowance",
+          bt.notes AS "notes",
           -- Workflow status
           bt.status AS "status",
           bt.approved_by AS "approvedBy",
@@ -234,6 +236,10 @@ class BusinessTripRepository {
     if (updateData.approvedBy) {
       query += `, approved_by = :approvedBy, approved_date = SYSDATE`;
       binds.approvedBy = Number(updateData.approvedBy);
+    }
+    if (updateData.notes !== undefined) {
+      query += `, notes = :notes`;
+      binds.notes = updateData.notes;
     }
     if (updateData.processedBy) {
       query += `, processed_by = :processedBy, processed_date = SYSDATE`;

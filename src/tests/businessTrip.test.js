@@ -87,9 +87,33 @@ describe('BusinessTripService - Unit Test', () => {
     it('should throw NotFoundError if the trip does not exist', async () => {
       businessTripRepository.findById.mockResolvedValue(null);
 
-      await expect(businessTripService.approveTrip(999, 101))
+      await expect(businessTripService.approveTrip(999, { approvedBy: 101, status: 'Approved', notes: 'Go ahead' }))
         .rejects
         .toThrow(NotFoundError);
+    });
+
+    it('should throw BadRequestError if status is invalid', async () => {
+      await expect(businessTripService.approveTrip(10, { approvedBy: 101, status: 'InvalidStatus' }))
+        .rejects
+        .toThrow(BadRequestError);
+    });
+
+    it('should successfully approve the trip when status and notes are valid', async () => {
+      businessTripRepository.findById.mockResolvedValue({
+        businessTripId: 10,
+        status: 'New Request',
+        startDate: '2025-06-01',
+        endDate: '2025-06-02'
+      });
+      employeeRepository.findById.mockResolvedValue({ employeeId: 101, firstName: 'Neena' });
+      businessTripRepository.updateStatus.mockResolvedValue(true);
+
+      const result = await businessTripService.approveTrip(10, { approvedBy: 101, status: 'Approved', notes: 'Approved ok' });
+      expect(businessTripRepository.updateStatus).toHaveBeenCalledWith(expect.anything(), 10, {
+        status: 'Approved',
+        approvedBy: 101,
+        notes: 'Approved ok'
+      });
     });
   });
 });

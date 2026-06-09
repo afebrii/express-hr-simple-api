@@ -161,14 +161,18 @@ class BusinessTripService {
     }
   }
 
-  async approveTrip(id, approvedBy) {
+  async approveTrip(id, { approvedBy, status, notes }) {
+    if (!['Approved', 'Rejected'].includes(status)) {
+      throw new BadRequestError(`Status must be either 'Approved' or 'Rejected'.`);
+    }
+
     const trip = await businessTripRepository.findById(id);
     if (!trip) {
       throw new NotFoundError(`Business Trip with ID ${id} not found.`);
     }
 
     if (trip.status !== 'New Request') {
-      throw new BadRequestError(`Only trips in 'New Request' status can be approved.`);
+      throw new BadRequestError(`Only trips in 'New Request' status can be approved or rejected.`);
     }
 
     const approver = await employeeRepository.findById(approvedBy);
@@ -180,8 +184,9 @@ class BusinessTripService {
     try {
       conn = await getConnection();
       const success = await businessTripRepository.updateStatus(conn, id, {
-        status: 'Approved',
-        approvedBy
+        status,
+        approvedBy,
+        notes
       });
       if (!success) {
         throw new NotFoundError(`Business Trip with ID ${id} not found.`);

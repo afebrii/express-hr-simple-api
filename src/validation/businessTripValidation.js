@@ -42,7 +42,8 @@ const approveBusinessTripSchema = z.object({
   }).positive("Approved by ID must be a positive number."),
   status: z.enum(['Approved', 'Rejected'], {
     error: "Status must be either 'Approved' or 'Rejected'."
-  })
+  }),
+  notes: z.string().max(255, "Notes must not exceed 255 characters.").optional()
 });
 
 const processBusinessTripSchema = z.object({

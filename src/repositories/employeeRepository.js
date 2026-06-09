@@ -40,6 +40,17 @@ class EmployeeRepository {
       });
     }
   }
+  async findById(id) {
+    let conn;
+    try {
+      conn = await getConnection();
+      const query = `SELECT employee_id AS "employeeId", first_name AS "firstName", last_name AS "lastName" FROM employees WHERE employee_id = :id`;
+      const result = await conn.execute(query, [Number(id)]);
+      return result.rows[0] || null;
+    } finally {
+      if (conn) await conn.close();
+    }
+  }
 }
 
 module.exports = new EmployeeRepository();

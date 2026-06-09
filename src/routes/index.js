@@ -5,12 +5,14 @@ var router = express.Router();
 const departmentRoutes = require('./departmentRoute');
 const regionRoutes = require('./regionRoute');
 const countryRoutes = require('./countryRoute');
+const overtimeRoutes = require('./overtimeRoute');
 
 //register kan semua fitur route ke sub path endpoint
 // bisa register kan semua route disini
 router.use('/departments', departmentRoutes);
 router.use('/regions', regionRoutes);
 router.use('/countries', countryRoutes);
+router.use('/overtimes', overtimeRoutes);
 
 module.exports = router;
 

@@ -205,33 +205,62 @@ Mengubah data pengajuan. Hanya dapat dilakukan apabila status pengajuan masih `N
 ---
 
 ### 5. PATCH - Persetujuan Manager (Approve Action)
-Manager memberikan persetujuan (`Approved`) atau menolak (`Rejected`) pengajuan.
+Manager memberikan persetujuan (`Approved`) atau menolak (`Rejected`) pengajuan beserta memberikan catatan evaluasi (`Notes`).
 
 * **Method**: `PATCH`
-* **URL**: `http://localhost:3000/api/v1/business-trips/1/approve`
+* **URL**: `http://localhost:3000/api/v1/business-trips/1/approve` *(Ganti angka 1 dengan ID yang valid)*
 * **Headers**: `Content-Type: application/json`
-* **Request Body (JSON)**:
-  ```json
-  {
-    "approvedBy": 102,
-    "status": "Approved"
-  }
-  ```
-* **Expected Response (200 OK)**:
-  ```json
-  {
-    "success": true,
-    "message": "Business Trip approved successfully",
-    "data": {
-      "businessTripId": 1,
-      "status": "Approved",
+* **Skenario A: Sukses Approve dengan Catatan**
+  * **Request Body (JSON)**:
+    ```json
+    {
       "approvedBy": 102,
-      "approverName": "Lex De Haan",
-      "approvedDate": "2026-06-09"
-      // ...
+      "status": "Approved",
+      "notes": "Disetujui untuk pengerjaan project software"
     }
-  }
-  ```
+    ```
+  * **Expected Response (200 OK)**:
+    ```json
+    {
+      "success": true,
+      "message": "Business Trip approval status updated successfully",
+      "data": {
+        "businessTripId": 1,
+        "requestDate": "2026-06-09",
+        "destination": "JKT-YGY Revised",
+        "purpose": "Meet Client and Training",
+        "startDate": "2025-07-01",
+        "endDate": "2025-07-03",
+        "durationDays": 3,
+        "transportAllowance": 1000000,
+        "accommodationAllowance": 1050000,
+        "dailyAllowance": 300000,
+        "mealAllowance": 150000,
+        "totalAllowance": 2500000,
+        "notes": "Disetujui untuk pengerjaan project software",
+        "status": "Approved",
+        "approvedBy": 102,
+        "approverName": "Lex De Haan",
+        "approvedDate": "2026-06-09"
+      }
+    }
+    ```
+* **Skenario B: Gagal - Validasi Zod (Notes Terlalu Panjang)**
+  * **Request Body (JSON)**:
+    ```json
+    {
+      "approvedBy": 102,
+      "status": "Approved",
+      "notes": "Ini adalah teks catatan yang sengaja dibuat sangat panjang melampaui batas maksimum dua ratus lima puluh lima karakter demi menguji keandalan skema validasi Zod yang dipasang pada modul bisnis trip. Teks ini harus melebihi batas panjang kolom yang diizinkan di database agar tertolak."
+    }
+    ```
+  * **Expected Response (400 Bad Request)**:
+    ```json
+    {
+      "success": false,
+      "message": "notes: Notes must not exceed 255 characters."
+    }
+    ```
 
 ---
 

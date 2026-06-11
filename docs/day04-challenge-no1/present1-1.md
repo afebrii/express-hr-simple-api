@@ -27,12 +27,7 @@ Jelaskan bahwa **form ini tidak membutuhkan tabel baru**, melainkan memanipulasi
 
 ## 3. Logika Kode & Validasi Bisnis
 
-### A. Validasi Payload (Zod)
-Gunakan file [overtimeValidation.js](file:///e:/Bootcamp/Code%20ID%202026/03.%20Express/express-hr-simple-api/src/validation/overtimeValidation.js) untuk menjelaskan bagaimana input divalidasi sebelum menyentuh database:
-* `createOvertimeSchema` memastikan seluruh kolom wajib diisi dengan format yang benar (misalnya tanggal harus `YYYY-MM-DD` dan jam berformat `HH:MM`).
-* `updateOvertimeSchema` memastikan data yang diedit tetap memenuhi kriteria validasi.
-
-### B. Proteksi Status (Guard Logic)
+### A. Proteksi Status (Guard Logic)
 Jelaskan aturan bisnis utama yang tertanam di [overtimeService.js](file:///e:/Bootcamp/Code%20ID%202026/03.%20Express/express-hr-simple-api/src/services/overtimeService.js):
 * Ketika pengguna menekan **Save** pada halaman **Edit**, sistem akan memeriksa status lembur tersebut di database terlebih dahulu.
 * Jika status sudah berubah dari `Request` menjadi `Approved` atau `Completed`, sistem akan memblokir perubahan tersebut dan mengembalikan error `400 Bad Request` dengan pesan: *"Only overtime requests with 'Request' status can be modified."*
@@ -44,7 +39,7 @@ Jelaskan aturan bisnis utama yang tertanam di [overtimeService.js](file:///e:/Bo
 Untuk menunjukkan kepada penguji bahwa form ini terintegrasi penuh secara sukses, lakukan demonstrasi langkah-langkah berikut (bisa disimulasikan menggunakan Postman):
 
 ### Skenario 1: Menyimpan Pengajuan Baru (Aksi Add $\rightarrow$ Save)
-1. Kirim request `POST` ke `/api/v1/overtimes` dengan data baru:
+1. Kirim request `POST` ke `/api/overtimes` dengan data baru:
    ```json
    {
      "employeeId": 100,
@@ -58,7 +53,7 @@ Untuk menunjukkan kepada penguji bahwa form ini terintegrasi penuh secara sukses
 2. Tunjukkan hasil response `201 Created` yang mengembalikan ID baru dan status default `'Request'`.
 
 ### Skenario 2: Mengubah Pengajuan yang Masih Pending (Aksi Edit $\rightarrow$ Save)
-1. Kirim request `PUT` ke `/api/v1/overtimes/{id}` untuk memperbarui nama proyek:
+1. Kirim request `PUT` ke `/api/overtimes/{id}` untuk memperbarui nama proyek:
    ```json
    {
      "projectName": "Mobile Development Revised",
@@ -68,6 +63,6 @@ Untuk menunjukkan kepada penguji bahwa form ini terintegrasi penuh secara sukses
 2. Tunjukkan bahwa data berhasil diperbarui dengan response `200 OK`.
 
 ### Skenario 3: Uji Coba Pencegahan Manipulasi Data (Edge Case)
-1. Lakukan approve pada data tersebut terlebih dahulu via API (`PATCH /api/v1/overtimes/{id}/approve`).
+1. Lakukan approve pada data tersebut terlebih dahulu via API (`PATCH /api/overtimes/{id}/approve`).
 2. Coba kirim kembali request `PUT` untuk mengubah proyek lembur tersebut.
 3. Tunjukkan kepada penguji bahwa sistem **berhasil memblokir** request tersebut dan mengembalikan pesan error: *"Only overtime requests with 'Request' status can be modified."*

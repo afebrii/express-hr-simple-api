@@ -18,6 +18,7 @@ Berdasarkan mockup antarmuka `https://codeid.id/payroll/overtime/user`, diidenti
    * **Total Hours**: Kalkulasi total jam lembur.
    * **Status**: Alur status lembur (`Request` $\rightarrow$ `Approved`/`Rejected` $\rightarrow$ `Completed`).
    * **Approved By**: Nama atasan/manager yang memproses persetujuan.
+   * **Notes**: Catatan persetujuan atau alasan penolakan dari atasan/manager.
 4. **Tombol Aksi**: Ikon **Edit** dan **Delete** untuk memanipulasi pengajuan, yang secara logika bisnis hanya aktif jika status data masih berupa pengajuan awal (`Request`).
 
 ### B. Aturan Bisnis (Business Rules)
@@ -50,6 +51,7 @@ erDiagram
         NUMBER total_hours
         VARCHAR2 status
         NUMBER approved_by FK
+        VARCHAR2 notes
     }
     EMPLOYEES ||--o{ OVERTIMES : "mengajukan (employee_id)"
     EMPLOYEES ||--o{ OVERTIMES : "menyetujui (approved_by)"
@@ -77,6 +79,7 @@ CREATE TABLE overtimes (
     total_hours NUMBER(4,2) NOT NULL,
     status VARCHAR2(20) DEFAULT 'Request',
     approved_by NUMBER,
+    notes VARCHAR2(255),
     -- Konstrain Integritas Data
     CONSTRAINT pk_overtime_id PRIMARY KEY (overtime_id),
     CONSTRAINT fk_overtime_employee_id FOREIGN KEY (employee_id) 
@@ -97,63 +100,7 @@ CREATE TABLE overtimes (
 
 Implementasi menggunakan pola **Layered Architecture** di Node.js/Express.js:
 
-### A. Skema Validasi Zod (Validation Layer)
-Lokasi File: `src/validation/overtimeValidation.js`
-```javascript
-const { z } = require('zod');
-
-const createOvertimeSchema = z.object({
-  employeeId: z.number({
-    error: "Employee ID must be a number."
-  }).positive("Employee ID must be a positive number."),
-  
-  overtimeDate: z.string({
-    error: "Overtime date is required."
-  }).regex(/^\d{4}-\d{2}-\d{2}$/, "Overtime date must be in YYYY-MM-DD format."),
-
-  projectName: z.string({
-    error: "Project name is required."
-  }).min(2, "Project name must be at least 2 characters long.")
-    .max(100, "Project name is too long. Max 100 characters.")
-    .trim(),
-
-  startTime: z.string({
-    error: "Start time is required."
-  }).regex(/^[0-9]{2}:[0-9]{2}$/, "Start time must be in HH:MM format (e.g., 07:00)."),
-
-  endTime: z.string({
-    error: "End time is required."
-  }).regex(/^[0-9]{2}:[0-9]{2}$/, "End time must be in HH:MM format (e.g., 09:00)."),
-
-  totalHours: z.number({
-    error: "Total hours must be a number."
-  }).positive("Total hours must be a positive number.")
-});
-
-const updateOvertimeSchema = z.object({
-  projectName: z.string().min(2, "Project name must be at least 2 characters long.").max(100, "Project name is too long. Max 100 characters.").trim().optional(),
-  startTime: z.string().regex(/^[0-9]{2}:[0-9]{2}$/, "Start time must be in HH:MM format (e.g., 07:00).").optional(),
-  endTime: z.string().regex(/^[0-9]{2}:[0-9]{2}$/, "End time must be in HH:MM format (e.g., 09:00).").optional(),
-  totalHours: z.number().positive("Total hours must be a positive number.").optional()
-});
-
-const approveOvertimeSchema = z.object({
-  approvedBy: z.number({
-    error: "Approved by (employee ID) must be a number."
-  }).positive("Approved by ID must be a positive number."),
-  status: z.enum(['Approved', 'Rejected'], {
-    error: "Status must be either 'Approved' or 'Rejected'."
-  })
-});
-
-module.exports = {
-  createOvertimeSchema,
-  updateOvertimeSchema,
-  approveOvertimeSchema
-};
-```
-
-### B. Hubungan Query Oracle (Repository Layer)
+### A. Hubungan Query Oracle (Repository Layer)
 Lokasi File: `src/repositories/overtimeRepository.js`
 ```javascript
 const { oracledb, getConnection } = require("../utils/db");
@@ -314,7 +261,7 @@ Modifikasi Tambahan pada `src/repositories/employeeRepository.js` (Metode `findB
   }
 ```
 
-### C. Logika Bisnis & Transaksi (Service Layer)
+### B. Logika Bisnis & Transaksi (Service Layer)
 Lokasi File: `src/services/overtimeService.js`
 ```javascript
 const overtimeRepository = require("../repositories/overtimeRepository");
@@ -448,7 +395,7 @@ class OvertimeService {
 module.exports = new OvertimeService();
 ```
 
-### D. Mapping Express (Controller Layer)
+### C. Mapping Express (Controller Layer)
 Lokasi File: `src/controllers/overtimeController.js`
 ```javascript
 const overtimeService = require("../services/overtimeService");
@@ -517,25 +464,19 @@ class OvertimeController {
 module.exports = new OvertimeController();
 ```
 
-### E. Jalur Endpoint (Routing Layer)
+### D. Jalur Endpoint (Routing Layer)
 Lokasi File: `src/routes/overtimeRoute.js`
 ```javascript
 const express = require("express");
 const router = express.Router();
 
 const overtimeController = require("../controllers/overtimeController");
-const { validateBody } = require("../middlewares/validateMiddleware");
-const { 
-  createOvertimeSchema, 
-  updateOvertimeSchema, 
-  approveOvertimeSchema 
-} = require("../validation/overtimeValidation");
 
 router.get("/", overtimeController.findAll);
 router.get("/:id", overtimeController.findById);
-router.post("/", validateBody(createOvertimeSchema), overtimeController.create);
-router.put("/:id", validateBody(updateOvertimeSchema), overtimeController.update);
-router.patch("/:id/approve", validateBody(approveOvertimeSchema), overtimeController.approve);
+router.post("/", overtimeController.create);
+router.put("/:id", overtimeController.update);
+router.patch("/:id/approve", overtimeController.approve);
 router.delete("/:id", overtimeController.remove);
 
 module.exports = router;
@@ -574,29 +515,13 @@ Hasil query skema struktur dari `user_tab_columns`:
 * `TOTAL_HOURS`: `NUMBER` (Not Null)
 * `STATUS`: `VARCHAR2(20)` (Nullable, default: `'Request'`)
 * `APPROVED_BY`: `NUMBER` (Nullable - FK to Employees)
+* `NOTES`: `VARCHAR2(255)` (Nullable)
 
 ---
 
 ## 5. Prosedur & Hasil Pengujian (Testing)
 
-### A. Hasil Unit Testing (Jest)
-Menjalankan unit test dengan melakukan mock terhadap database repository layer secara aman:
-`npx jest src/tests/overtime.test.js --watchAll=false`
-
-**Output Log Konsol:**
-```text
-PASS src/tests/overtime.test.js (7.376 s)
-PASS src/tests/department.test.js
-
-Test Suites: 2 passed, 2 total
-Tests:       8 passed, 8 total
-Snapshots:   0 total
-Time:        9.105 s
-Ran all test suites.
-```
-*Evaluasi*: Seluruh logika mock melempar BadRequestError, NotFoundError, dan skenario normal berhasil tervalidasi 100%.
-
-### B. Hasil Integration Testing (Database Asli)
+### A. Hasil Integration Testing (Database Asli)
 Pengujian fungsionalitas CRUD secara berantai langsung menggunakan data riil pada database Oracle local:
 `node "C:\Users\Asus\.gemini\antigravity-ide\brain\60d4af4f-9f85-4414-830c-1ff22a7b9c20\scratch\test_overtime_service.js"`
 
@@ -667,7 +592,7 @@ Untuk menguji semua endpoint secara manual melalui Postman, jalankan server Expr
 ```bash
 npm run dev
 ```
-Secara default, server akan berjalan di `http://localhost:3000` dengan prefix API `/api/v1` (sehingga base URL pengujian adalah `http://localhost:3000/api/v1/overtimes`).
+Secara default, server akan berjalan di `http://localhost:3000` dengan prefix API `/api` (sehingga base URL pengujian adalah `http://localhost:3000/api/overtimes`).
 
 Berikut adalah struktur koleksi request Postman beserta contoh request dan response untuk skenario sukses maupun gagal:
 
@@ -676,7 +601,7 @@ Berikut adalah struktur koleksi request Postman beserta contoh request dan respo
 #### 1. POST - Mengajukan Lembur Baru (Create)
 Digunakan untuk merekam data lembur karyawan ke database.
 
-* **URL**: `POST http://localhost:3000/api/v1/overtimes`
+* **URL**: `POST http://localhost:3000/api/overtimes`
 * **Headers**: 
   * `Content-Type: application/json`
 * **Skenario A: Sukses (Karyawan Terdaftar)**
@@ -723,66 +648,99 @@ Digunakan untuk merekam data lembur karyawan ke database.
       "message": "Employee with ID 9999 not found."
     }
     ```
-* **Skenario C: Gagal - Validasi Zod (Format Input Salah)**
-  * **Request Body (JSON)**:
+---
+
+#### 2. GET - Mengambil Semua / Daftar Lembur (Find All & Read)
+Digunakan untuk mengambil seluruh riwayat lembur (Find All) atau memfilter riwayat lembur berdasarkan parameter Bulan, Tahun, dan ID Karyawan sesuai dengan mockup pencarian.
+
+* **Skenario A: Mengambil Semua Daftar Lembur Tanpa Filter (Find All)**
+  * **URL**: `GET http://localhost:3000/api/overtimes`
+  * **Expected Response (200 OK)**:
     ```json
     {
-      "employeeId": 100,
-      "overtimeDate": "09-06-2025", 
-      "projectName": "A", 
-      "startTime": "7:0", 
-      "endTime": "9:0", 
-      "totalHours": -2.0
+      "success": true,
+      "message": "Overtimes retrieved successfully",
+      "data": [
+        {
+          "overtimeId": 1,
+          "employeeId": 100,
+          "employeeName": "Steven King",
+          "overtimeDate": "2025-06-09",
+          "projectName": "Mobile Development Project",
+          "startTime": "07:00",
+          "endTime": "09:00",
+          "totalHours": 2,
+          "status": "Request",
+          "approvedBy": null,
+          "approverName": " "
+        }
+      ]
     }
     ```
-  * **Expected Response (400 Bad Request)**:
+
+* **Skenario B: Mengambil Daftar Lembur dengan Filter (Read)**
+  * **URL**: `GET http://localhost:3000/api/overtimes`
+  * **Query Parameters (Params)**:
+    * `employeeId`: `100` (Opsional)
+    * `month`: `6` (Opsional - bulan Juni)
+    * `year`: `2025` (Opsional)
+  * **Expected Response (200 OK)**:
     ```json
     {
-      "success": false,
-      "message": "overtimeDate: Overtime date must be in YYYY-MM-DD format."
+      "success": true,
+      "message": "Overtimes retrieved successfully",
+      "data": [
+        {
+          "overtimeId": 1,
+          "employeeId": 100,
+          "employeeName": "Steven King",
+          "overtimeDate": "2025-06-09",
+          "projectName": "Mobile Development Project",
+          "startTime": "07:00",
+          "endTime": "09:00",
+          "totalHours": 2,
+          "status": "Request",
+          "approvedBy": null,
+          "approverName": " "
+        }
+      ]
     }
     ```
-    *(Zod akan menangkap kegagalan parsing format tanggal, batas karakter proyek, format jam HH:MM, dan angka positif jam lembur).*
 
 ---
 
-#### 2. GET - Mengambil Daftar Lembur dengan Filter (Read)
-Digunakan untuk memfilter riwayat lembur berdasarkan parameter Bulan, Tahun, dan ID Karyawan sesuai dengan mockup pencarian.
+#### 3. GET - Mengambil Detail Lembur Berdasarkan ID (Find By ID)
+Digunakan untuk melihat rincian lengkap dari satu pengajuan lembur spesifik menggunakan `overtimeId`.
 
-* **URL**: `GET http://localhost:3000/api/v1/overtimes`
-* **Query Parameters (Params)**:
-  * `employeeId`: `100` (Opsional)
-  * `month`: `6` (Opsional - bulan Juni)
-  * `year`: `2025` (Opsional)
+* **URL**: `GET http://localhost:3000/api/overtimes/1` *(Ganti angka 1 dengan ID lembur yang valid)*
 * **Expected Response (200 OK)**:
   ```json
   {
     "success": true,
-    "message": "Overtimes retrieved successfully",
-    "data": [
-      {
-        "overtimeId": 1,
-        "employeeId": 100,
-        "employeeName": "Steven King",
-        "overtimeDate": "2025-06-09",
-        "projectName": "Mobile Development Project",
-        "startTime": "07:00",
-        "endTime": "09:00",
-        "totalHours": 2,
-        "status": "Request",
-        "approvedBy": null,
-        "approverName": " "
-      }
-    ]
+    "message": "Overtime retrieved successfully",
+    "data": {
+      "overtimeId": 1,
+      "employeeId": 100,
+      "employeeName": "Steven King",
+      "overtimeDate": "2025-06-09",
+      "projectName": "Mobile Development Project",
+      "startTime": "07:00",
+      "endTime": "09:00",
+      "totalHours": 2,
+      "status": "Request",
+      "approvedBy": null,
+      "approverName": " ",
+      "notes": null
+    }
   }
   ```
 
 ---
 
-#### 3. PUT - Mengubah Data Pengajuan Lembur (Update)
+#### 4. PUT - Mengubah Data Pengajuan Lembur (Update)
 Digunakan untuk mengedit pengajuan lembur yang datanya salah input.
 
-* **URL**: `PUT http://localhost:3000/api/v1/overtimes/1` *(Ganti angka 1 dengan ID Overtime Anda)*
+* **URL**: `PUT http://localhost:3000/api/overtimes/1` *(Ganti angka 1 dengan ID Overtime Anda)*
 * **Headers**: 
   * `Content-Type: application/json`
 * **Skenario A: Sukses (Status 'Request')**
@@ -824,10 +782,10 @@ Digunakan untuk mengedit pengajuan lembur yang datanya salah input.
 
 ---
 
-#### 4. PATCH - Memproses Persetujuan / Approval Lembur (Approve / Reject)
+#### 5. PATCH - Memproses Persetujuan / Approval Lembur (Approve / Reject)
 Digunakan oleh atasan/manager untuk mengubah status pengajuan.
 
-* **URL**: `PATCH http://localhost:3000/api/v1/overtimes/1/approve` *(Ganti angka 1 dengan ID Overtime)*
+* **URL**: `PATCH http://localhost:3000/api/overtimes/1/approve` *(Ganti angka 1 dengan ID Overtime)*
 * **Headers**:
   * `Content-Type: application/json`
 * **Skenario A: Sukses Approve**
@@ -874,12 +832,42 @@ Digunakan oleh atasan/manager untuk mengubah status pengajuan.
     }
     ```
 
+* **Skenario C: Sukses Reject (Menolak Pengajuan)**
+  * **Request Body (JSON)**:
+    ```json
+    {
+      "approvedBy": 101,
+      "status": "Rejected",
+      "notes": "Rejected: Jam lembur di luar batas maksimum harian."
+    }
+    ```
+  * **Expected Response (200 OK)**:
+    ```json
+    {
+      "success": true,
+      "message": "Overtime request approval status updated successfully",
+      "data": {
+        "overtimeId": 1,
+        "employeeId": 100,
+        "employeeName": "Steven King",
+        "overtimeDate": "2025-06-09",
+        "projectName": "Mobile Development Revised",
+        "startTime": "07:00",
+        "endTime": "09:00",
+        "totalHours": 2.5,
+        "status": "Rejected",
+        "approvedBy": 101,
+        "approverName": "Neena Kochhar",
+        "notes": "Rejected: Jam lembur di luar batas maksimum harian."
+      }
+    }
+    ```
 ---
 
-#### 5. DELETE - Menghapus Pengajuan Lembur (Delete)
+#### 6. DELETE - Menghapus Pengajuan Lembur (Delete)
 Karyawan dapat membatalkan pengajuan lembur mereka selama belum diproses.
 
-* **URL**: `DELETE http://localhost:3000/api/v1/overtimes/1` *(Ganti angka 1 dengan ID Overtime)*
+* **URL**: `DELETE http://localhost:3000/api/overtimes/1` *(Ganti angka 1 dengan ID Overtime)*
 * **Skenario A: Sukses Hapus (Status 'Request')**
   * **Expected Response (200 OK)**:
     ```json

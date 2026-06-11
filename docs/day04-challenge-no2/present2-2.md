@@ -26,15 +26,7 @@ Jelaskan bahwa untuk menampung masukan **catatan persetujuan (Notes)** dari mana
 
 ## 3. Logika Backend & Integrasi REST API
 
-### A. Validasi Payload (Validation Layer)
-Tunjukkan bahwa data approval divalidasi menggunakan Zod schema `approveBusinessTripSchema` di [businessTripValidation.js](file:///e:/Bootcamp/Code%20ID%202026/03.%20Express/express-hr-simple-api/src/validation/businessTripValidation.js) dengan membatasi panjang catatan maksimal 255 karakter:
-```javascript
-status: z.enum(['Approved', 'Rejected']),
-notes: z.string().max(255).optional()
-```
-*(Catatan: Pilihan `Cancel` di UI dipetakan sebagai status `'Rejected'` di database, sementara `Pending` tetap membiarkan status pengajuan)*
-
-### B. Penyimpanan & Transaksi (Service Layer)
+### A. Penyimpanan & Transaksi (Service Layer)
 * Metode `approveTrip` di [businessTripService.js](file:///e:/Bootcamp/Code%20ID%202026/03.%20Express/express-hr-simple-api/src/services/businessTripService.js) menerima parameter `status` dan `notes`, lalu menyimpannya secara transaksional ke database melalui repositori.
 * Data `notes` ini juga ikut di-select pada query list dan detail untuk ditampilkan kembali ke antarmuka pengguna.
 

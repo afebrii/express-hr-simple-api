@@ -28,13 +28,7 @@ Jelaskan bahwa seiring ditemukannya input **Notes** pada mockup modal konfirmasi
 
 ## 3. Logika Kode Backend
 
-### A. Validasi Catatan (Validation Layer)
-Tunjukkan kode Zod schema `approveOvertimeSchema` pada [overtimeValidation.js](file:///e:/Bootcamp/Code%20ID%202026/03.%20Express/express-hr-simple-api/src/validation/overtimeValidation.js) yang membatasi panjang catatan maksimal 255 karakter demi efisiensi memori database:
-```javascript
-notes: z.string().max(255, "Notes must not exceed 255 characters.").optional()
-```
-
-### B. Transaksi & Repositori (Service & Repository Layer)
+### A. Transaksi & Repositori (Service & Repository Layer)
 * **Penyimpanan**: Metode `updateStatus` pada [overtimeRepository.js](file:///e:/Bootcamp/Code%20ID%202026/03.%20Express/express-hr-simple-api/src/repositories/overtimeRepository.js) akan menyisipkan isi catatan tersebut secara langsung dalam query UPDATE.
 * **Pengembalian Data**: Query SELECT pada metode `findAll` dan `findById` diperbarui agar kolom `notes` ikut diambil dari database dan dikembalikan ke frontend.
 
@@ -44,11 +38,11 @@ notes: z.string().max(255, "Notes must not exceed 255 characters.").optional()
 Gunakan Postman untuk menunjukkan siklus approval secara transparan:
 
 ### Skenario 1: Memeriksa Data Lembur Sebelum Diproses (Status 'Request')
-1. Kirim request `GET` ke `/api/v1/overtimes`.
+1. Kirim request `GET` ke `/api/overtimes`.
 2. Tunjukkan bahwa data lembur yang baru diajukan masih memiliki `"approvedBy": null` dan `"notes": null`.
 
 ### Skenario 2: Menyetujui Lembur Beserta Catatan (Aksi Approve)
-1. Kirim request `PATCH` ke `/api/v1/overtimes/{id}/approve` (ganti `{id}` dengan ID lembur).
+1. Kirim request `PATCH` ke `/api/overtimes/{id}/approve` (ganti `{id}` dengan ID lembur).
    * **Payload Request (JSON)**:
      ```json
      {
